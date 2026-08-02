@@ -1,11 +1,8 @@
 import json
 import random
-import re
 import requests
-import time
 from datetime import datetime
 
-# 题目池（你可以自由增删）
 PROBLEM_POOL = [
     "P1001", "P1002", "P1003", "P1008", "P1011", "P1012", "P1014",
     "P1015", "P1016", "P1017", "P1018", "P1019", "P1020", "P1021",
@@ -21,80 +18,82 @@ PROBLEM_POOL = [
 ]
 
 def fetch_problem_from_luogu(pid):
-    url = f"https://www.luogu.com.cn/problem/{pid}"
-    # 使用更完整、更像真实浏览器的请求头
+    """使用洛谷官方 API 获取题目"""
+    # 方法1: 使用洛谷 API
+    url = f"https://www.luogu.com.cn/api/problem/detail/{pid}"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Cache-Control": "max-age=0",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json",
+        "Referer": "https://www.luogu.com.cn/"
     }
     
     try:
-        # 增加随机延迟，模拟人类浏览行为，降低被封风险
-        time.sleep(random.uniform(1.0, 2.5))
-        response = requests.get(url, headers=headers, timeout=20)
-        response.encoding = "utf-8"
-        
-        if response.status_code != 200:
-            return {"pid": pid, "error": f"HTTP {response.status_code}"}
-        
-        html = response.text
-        # 尝试提取包含题目信息的 JSON 数据
-        match = re.search(r'window\._feInjection\s*=\s*({.*?});\s*</script>', html, re.DOTALL)
-        if not match:
-            return {"pid": pid, "error": "未找到题目数据"}
-        
-        data = json.loads(match.group(1))
-        problem_data = data.get("currentData", {}).get("problem", {})
-        if not problem_data:
-            return {"pid": pid, "error": "题目数据为空"}
-        
-        # 清理题目内容中的 HTML 标签
-        content = problem_data.get("content", "")
-        content = re.sub(r'<[^>]+>', '', content)
-        content = re.sub(r'\s+', ' ', content).strip()
-        
-        input_format = problem_data.get("inputFormat", "")
-        input_format = re.sub(r'<[^>]+>', '', input_format).strip()
-        
-        output_format = problem_data.get("outputFormat", "")
-        output_format = re.sub(r'<[^>]+>', '', output_format).strip()
-        
-        samples = problem_data.get("samples", [])
-        
-        # 转换难度等级
-        difficulty_map = {
-            1: "入门", 2: "普及-", 3: "普及/提高-",
-            4: "普及+/提高", 5: "提高+/省选-",
-            6: "省选/NOI-", 7: "NOI/NOI+/CTSC"
-        }
-        difficulty_level = problem_data.get("difficulty", 0)
-        difficulty = difficulty_map.get(difficulty_level, "未知")
-        
-        tags = problem_data.get("tags", [])
-        
-        return {
-            "pid": pid,
-            "title": problem_data.get("title", pid),
-            "url": f"https://www.luogu.com.cn/problem/{pid}",
-            "difficulty": difficulty,
-            "tags": tags,
-            "content": content[:3000] if content else "暂无描述",
-            "input_format": input_format or "暂无",
-            "output_format": output_format or "暂无",
-            "samples": samples
-        }
-        
-    except Exception as e:
-        return {"pid": pid, "error": str(e)}
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("code") == 200:
+                problem = data.get("data", {})
+                return {
+                    "pid": pid,
+                    "title": problem.get("title", pid),
+                    "url": f"https://www.luogu.com.cn/problem/{pid}",
+                    "difficulty": problem.get("difficulty", "未知"),
+                    "tags": problem.get("tags", []),
+                    "content": problem.get("content", "暂无描述")[:500],
+                    "input_format": problem.get("input_format", ""),
+                    "output_format": problem.get("output_format", ""),
+                    "samples": problem.get("samples", [])
+                }
+    except:
+        pass
+    
+    # 方法2: 如果 API 失败，使用爬虫
+    url = f"https://www.luogu.com.cn/problem/{pid}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Cookie": "_uid=; __client_id=;"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            html = response.text
+            import re
+            # 尝试提取标题
+            title_match = re.search(r'<title>(.*?)</title>', html)
+            title = title_match.group(1).replace(' - 洛谷', '').strip() if title_match else pid
+            
+            # 提取题目内容
+            content_match = re.search(r'<article>(.*?)</article>', html, re.DOTALL)
+            content = content_match.group(1) if content_match else "暂无描述"
+            content = re.sub(r'<[^>]+>', '', content)[:500]
+            
+            return {
+                "pid": pid,
+                "title": title,
+                "url": f"https://www.luogu.com.cn/problem/{pid}",
+                "difficulty": "未知",
+                "tags": [],
+                "content": content,
+                "input_format": "",
+                "output_format": "",
+                "samples": []
+            }
+    except:
+        pass
+    
+    # 方法3: 返回基本信息
+    return {
+        "pid": pid,
+        "title": pid,
+        "url": f"https://www.luogu.com.cn/problem/{pid}",
+        "difficulty": "未知",
+        "tags": [],
+        "content": f"题目 {pid}，请访问洛谷查看完整内容",
+        "input_format": "",
+        "output_format": "",
+        "samples": []
+    }
 
 def main():
     selected = random.sample(PROBLEM_POOL, 3)
