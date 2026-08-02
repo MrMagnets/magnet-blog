@@ -1,16 +1,17 @@
 {
-    "date": "2026-01-01T00:00:00",
-    "problems": [
-        {
-            "pid": "P1001",
-            "title": "A+B Problem（示例）",
-            "url": "https://www.luogu.com.cn/problem/P1001",
-            "difficulty": "入门",
-            "tags": ["入门", "模拟"],
-            "content": "这是示例题目，等待 GitHub Actions 自动更新...",
-            "input_format": "暂无",
-            "output_format": "暂无",
-            "samples": []
-        }
-    ]
+  "date": "2026-08-02T10:51:30.113373",
+  "problems": [
+    {
+      "pid": "P1018",
+      "error": "HTTP 403"
+    },
+    {
+      "pid": "P1016",
+      "error": "HTTP 403"
+    },
+    {
+      "pid": "P1087",
+      "error": "HTTP 403"
+    }
+  ]
 }
