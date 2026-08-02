@@ -3,7 +3,7 @@ const GITHUB_REPO = 'magnet-blog';
 const GITHUB_BRANCH = 'main';
 const POSTS_PATH = 'content/posts';
 
-// 使用 jsdelivr CDN（无需代理，完美支持跨域）
+// 使用 jsdelivr CDN（完美支持跨域）
 const CDN_BASE = `https://cdn.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}`;
 
 function getUrlParam(name) {
@@ -15,7 +15,7 @@ async function loadPostList() {
     const container = document.getElementById('post-list');
     if (!container) return;
     try {
-        // jsdelivr 不支持直接列出目录，所以使用 GitHub API 获取列表
+        // 使用 GitHub API 获取文章列表（带代理）
         const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('无法获取文章列表');
@@ -29,7 +29,7 @@ async function loadPostList() {
         for (const file of posts) {
             const slug = file.name.replace('.md', '');
             try {
-                // 通过 jsdelivr 获取文章内容（避免跨域）
+                // 通过 jsdelivr 获取文章内容
                 const contentUrl = `${CDN_BASE}/content/posts/${file.name}`;
                 const contentRes = await fetch(contentUrl);
                 const content = await contentRes.text();
@@ -53,7 +53,6 @@ async function loadPostDetail() {
     const slug = getUrlParam('slug');
     if (!slug) { container.innerHTML = '<p>❌ 未指定文章</p>'; return; }
     try {
-        // 通过 jsdelivr 获取文章内容（完美支持跨域）
         const url = `${CDN_BASE}/content/posts/${slug}.md`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('文章不存在');
@@ -70,7 +69,6 @@ async function loadProblems() {
     const container = document.getElementById('problem-list');
     if (!container) return;
     try {
-        // 通过 jsdelivr 获取题目数据（完美支持跨域）
         const url = `${CDN_BASE}/content/problems.json`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('题目数据不存在');
