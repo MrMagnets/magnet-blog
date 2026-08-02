@@ -2,8 +2,10 @@ import json
 import random
 import re
 import requests
+import time
 from datetime import datetime
 
+# 题目池（你可以自由增删）
 PROBLEM_POOL = [
     "P1001", "P1002", "P1003", "P1008", "P1011", "P1012", "P1014",
     "P1015", "P1016", "P1017", "P1018", "P1019", "P1020", "P1021",
@@ -20,18 +22,32 @@ PROBLEM_POOL = [
 
 def fetch_problem_from_luogu(pid):
     url = f"https://www.luogu.com.cn/problem/{pid}"
+    # 使用更完整、更像真实浏览器的请求头
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0",
     }
     
     try:
-        response = requests.get(url, headers=headers, timeout=15)
+        # 增加随机延迟，模拟人类浏览行为，降低被封风险
+        time.sleep(random.uniform(1.0, 2.5))
+        response = requests.get(url, headers=headers, timeout=20)
         response.encoding = "utf-8"
         
         if response.status_code != 200:
             return {"pid": pid, "error": f"HTTP {response.status_code}"}
         
         html = response.text
+        # 尝试提取包含题目信息的 JSON 数据
         match = re.search(r'window\._feInjection\s*=\s*({.*?});\s*</script>', html, re.DOTALL)
         if not match:
             return {"pid": pid, "error": "未找到题目数据"}
@@ -41,6 +57,7 @@ def fetch_problem_from_luogu(pid):
         if not problem_data:
             return {"pid": pid, "error": "题目数据为空"}
         
+        # 清理题目内容中的 HTML 标签
         content = problem_data.get("content", "")
         content = re.sub(r'<[^>]+>', '', content)
         content = re.sub(r'\s+', ' ', content).strip()
@@ -53,6 +70,7 @@ def fetch_problem_from_luogu(pid):
         
         samples = problem_data.get("samples", [])
         
+        # 转换难度等级
         difficulty_map = {
             1: "入门", 2: "普及-", 3: "普及/提高-",
             4: "普及+/提高", 5: "提高+/省选-",
