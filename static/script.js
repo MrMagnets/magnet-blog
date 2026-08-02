@@ -3,8 +3,8 @@ const GITHUB_REPO = 'magnet-blog';
 const GITHUB_BRANCH = 'main';
 const POSTS_PATH = 'content/posts';
 
-// GitHub API 代理地址
-const GH_PROXY = 'https://ghproxy.com/https://api.github.com';
+// GitHub API 代理地址（如果失效可更换）
+const GH_PROXY = 'https://gh.api.99988866.xyz/https://api.github.com';
 
 function getUrlParam(name) {
     const params = new URLSearchParams(window.location.search);
@@ -78,7 +78,12 @@ async function loadProblems() {
         let html = '';
         for (const p of problems) {
             const desc = p.content ? p.content.slice(0, 200) + '...' : '暂无描述';
-            html += `<div class="problem-card"><h3><a href="${p.url}" target="_blank">${p.pid} ${p.title}</a></h3><span class="difficulty">${p.difficulty || '未知难度'}</span><div class="problem-content">${desc}</div></div>`;
+            // 如果题目有错误信息，显示友好提示
+            if (p.error) {
+                html += `<div class="problem-card"><h3><a href="${p.url || '#'}" target="_blank">${p.pid}</a></h3><span class="difficulty" style="background:#fed7d7;color:#9b2c2c;">⚠️ 加载失败</span><div class="problem-content">${p.error}</div></div>`;
+            } else {
+                html += `<div class="problem-card"><h3><a href="${p.url}" target="_blank">${p.pid} ${p.title}</a></h3><span class="difficulty">${p.difficulty || '未知难度'}</span><div class="problem-content">${desc}</div></div>`;
+            }
         }
         container.innerHTML = html;
     } catch (error) {
