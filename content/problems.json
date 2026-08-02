@@ -1,0 +1,16 @@
+{
+    "date": "2026-01-01T00:00:00",
+    "problems": [
+        {
+            "pid": "P1001",
+            "title": "A+B Problem（示例）",
+            "url": "https://www.luogu.com.cn/problem/P1001",
+            "difficulty": "入门",
+            "tags": ["入门", "模拟"],
+            "content": "这是示例题目，等待 GitHub Actions 自动更新...",
+            "input_format": "暂无",
+            "output_format": "暂无",
+            "samples": []
+        }
+    ]
+}
