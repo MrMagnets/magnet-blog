@@ -8,11 +8,15 @@ function getUrlParam(name) {
     return params.get(name);
 }
 
+// 使用 CORS 代理服务
+const PROXY_URL = 'https://corsproxy.io/?';
+
 async function loadPostList() {
     const container = document.getElementById('post-list');
     if (!container) return;
     try {
-        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}`;
+        const target = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}`;
+        const url = `${PROXY_URL}${encodeURIComponent(target)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('无法获取文章列表');
         const files = await res.json();
@@ -47,7 +51,8 @@ async function loadPostDetail() {
     const slug = getUrlParam('slug');
     if (!slug) { container.innerHTML = '<p>❌ 未指定文章</p>'; return; }
     try {
-        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}/${slug}.md`;
+        const target = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}/${slug}.md`;
+        const url = `${PROXY_URL}${encodeURIComponent(target)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('文章不存在');
         const data = await res.json();
@@ -64,7 +69,8 @@ async function loadProblems() {
     const container = document.getElementById('problem-list');
     if (!container) return;
     try {
-        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/content/problems.json`;
+        const target = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/content/problems.json`;
+        const url = `${PROXY_URL}${encodeURIComponent(target)}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('题目数据不存在，请等待 GitHub Actions 运行');
         const data = await res.json();
