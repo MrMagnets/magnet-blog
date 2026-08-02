@@ -1,9 +1,5 @@
 const GITHUB_OWNER = 'MrMagnets';
 const GITHUB_REPO = 'magnet-blog';
-const POSTS_PATH = 'content/posts';
-
-// 使用 Netlify Functions 作为代理（完美解决 CORS）
-const API_BASE = '/.netlify/functions';
 
 function getUrlParam(name) {
     const params = new URLSearchParams(window.location.search);
@@ -14,28 +10,19 @@ async function loadPostList() {
     const container = document.getElementById('post-list');
     if (!container) return;
     try {
-        const res = await fetch(`${API_BASE}/get-posts`);
+        const res = await fetch('/data/posts.json');
         if (!res.ok) throw new Error('无法获取文章列表');
-        const files = await res.json();
-        if (!Array.isArray(files) || files.length === 0) {
+        const posts = await res.json();
+        if (posts.length === 0) {
             container.innerHTML = '<p>📭 还没有文章，去写一篇吧！</p>';
             return;
         }
-        const posts = files.filter(f => f.name.endsWith('.md')).sort((a, b) => b.name.localeCompare(a.name));
         let html = '';
-        for (const file of posts) {
-            const slug = file.name.replace('.md', '');
-            try {
-                const contentRes = await fetch(`${API_BASE}/get-post?slug=${encodeURIComponent(slug)}`);
-                const data = await contentRes.json();
-                const content = data.content || '';
-                const titleMatch = content.match(/^#\s+(.+)/m);
-                const title = titleMatch ? titleMatch[1] : slug;
-                const date = file.name.slice(0, 10) || '未知日期';
-                html += `<div class="post-item"><a href="post.html?slug=${encodeURIComponent(slug)}">${title}</a><div class="post-meta">📅 ${date}</div></div>`;
-            } catch (e) {
-                html += `<div class="post-item"><a href="post.html?slug=${encodeURIComponent(slug)}">${slug}</a><div class="post-meta">⚠️ 加载失败</div></div>`;
-            }
+        for (const post of posts) {
+            html += `<div class="post-item">
+                <a href="post.html?slug=${encodeURIComponent(post.slug)}">${post.title}</a>
+                <div class="post-meta">📅 ${post.date}</div>
+            </div>`;
         }
         container.innerHTML = html;
     } catch (error) {
@@ -49,13 +36,18 @@ async function loadPostDetail() {
     const slug = getUrlParam('slug');
     if (!slug) { container.innerHTML = '<p>❌ 未指定文章</p>'; return; }
     try {
-        const res = await fetch(`${API_BASE}/get-post?slug=${encodeURIComponent(slug)}`);
-        if (!res.ok) throw new Error('文章不存在');
-        const data = await res.json();
-        const content = data.content || '';
-        let html = content.replace(/^# (.+)$/gm, '<h1>$1</h1>').replace(/^## (.+)$/gm, '<h2>$1</h2>').replace(/^### (.+)$/gm, '<h3>$1</h3>').replace(/\n/g, '<br>');
+        const res = await fetch('/data/posts.json');
+        if (!res.ok) throw new Error('无法获取文章数据');
+        const posts = await res.json();
+        const post = posts.find(p => p.slug === slug);
+        if (!post) throw new Error('文章不存在');
+        let html = post.content
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/\n/g, '<br>');
         container.innerHTML = html;
-        document.title = `${slug} - 磁铁的博客`;
+        document.title = `${post.title} - 磁铁的博客`;
     } catch (error) {
         container.innerHTML = `<p>❌ 加载失败: ${error.message}</p>`;
     }
@@ -65,10 +57,9 @@ async function loadProblems() {
     const container = document.getElementById('problem-list');
     if (!container) return;
     try {
-        const res = await fetch(`${API_BASE}/get-problems`);
+        const res = await fetch('/data/problems.json');
         if (!res.ok) throw new Error('题目数据不存在');
-        const data = await res.json();
-        const jsonData = data.json || { problems: [] };
+        const jsonData = await res.json();
         const problems = jsonData.problems || [];
         if (problems.length === 0) { container.innerHTML = '<p>⏳ 今日题目加载中...</p>'; return; }
         let html = '';
@@ -86,12 +77,13 @@ async function loadProblems() {
     }
 }
 
+// 发布文章功能保持不变
 async function publishPost(title, content, token) {
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10);
     const slug = title.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-|-$/g, '');
     const filename = `${dateStr}-${slug}.md`;
-    const path = `${POSTS_PATH}/${filename}`;
+    const path = `content/posts/${filename}`;
     const mdContent = `# ${title}\n\n${content}`;
     const base64Content = btoa(unescape(encodeURIComponent(mdContent)));
     const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`;

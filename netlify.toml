@@ -1,14 +1,6 @@
 [build]
   publish = "static"
-  command = "echo '静态站点，无需构建'"
-
-[build.environment]
-  NODE_VERSION = "18"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+  command = "node scripts/build/generate-data.js"
 
 [[redirects]]
   from = "/"
