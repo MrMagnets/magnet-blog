@@ -9,7 +9,7 @@ function getUrlParam(name) {
 }
 
 // 使用 CORS 代理服务
-const PROXY_URL = 'https://corsproxy.io/?';
+const PROXY_URL = 'https://github.cors-proxy.com/';
 
 async function loadPostList() {
     const container = document.getElementById('post-list');
