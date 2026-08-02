@@ -16,6 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -36,4 +37,4 @@ jobs:
           git pull origin main --rebase
           git add content/problems.json
           git diff --staged --quiet || git commit -m "chore: update daily problems [skip ci]"
-          git push
+          git push origin main
