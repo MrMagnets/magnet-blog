@@ -3,20 +3,20 @@ const GITHUB_REPO = 'magnet-blog';
 const GITHUB_BRANCH = 'main';
 const POSTS_PATH = 'content/posts';
 
+// 使用 jsdelivr CDN（无需代理，完美支持跨域）
+const CDN_BASE = `https://cdn.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}`;
+
 function getUrlParam(name) {
     const params = new URLSearchParams(window.location.search);
     return params.get(name);
 }
 
-// 使用 CORS 代理服务
-const PROXY_URL = 'https://github.cors-proxy.com/';
-
 async function loadPostList() {
     const container = document.getElementById('post-list');
     if (!container) return;
     try {
-        const target = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}`;
-        const url = `${PROXY_URL}${encodeURIComponent(target)}`;
+        // jsdelivr 不支持直接列出目录，所以使用 GitHub API 获取列表
+        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('无法获取文章列表');
         const files = await res.json();
@@ -29,7 +29,9 @@ async function loadPostList() {
         for (const file of posts) {
             const slug = file.name.replace('.md', '');
             try {
-                const contentRes = await fetch(file.download_url);
+                // 通过 jsdelivr 获取文章内容（避免跨域）
+                const contentUrl = `${CDN_BASE}/content/posts/${file.name}`;
+                const contentRes = await fetch(contentUrl);
                 const content = await contentRes.text();
                 const titleMatch = content.match(/^#\s+(.+)/m);
                 const title = titleMatch ? titleMatch[1] : slug;
@@ -51,12 +53,11 @@ async function loadPostDetail() {
     const slug = getUrlParam('slug');
     if (!slug) { container.innerHTML = '<p>❌ 未指定文章</p>'; return; }
     try {
-        const target = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}/${slug}.md`;
-        const url = `${PROXY_URL}${encodeURIComponent(target)}`;
+        // 通过 jsdelivr 获取文章内容（完美支持跨域）
+        const url = `${CDN_BASE}/content/posts/${slug}.md`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('文章不存在');
-        const data = await res.json();
-        const content = atob(data.content.replace(/\n/g, ''));
+        const content = await res.text();
         let html = content.replace(/^# (.+)$/gm, '<h1>$1</h1>').replace(/^## (.+)$/gm, '<h2>$1</h2>').replace(/^### (.+)$/gm, '<h3>$1</h3>').replace(/\n/g, '<br>');
         container.innerHTML = html;
         document.title = `${slug} - 磁铁的博客`;
@@ -69,13 +70,11 @@ async function loadProblems() {
     const container = document.getElementById('problem-list');
     if (!container) return;
     try {
-        const target = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/content/problems.json`;
-        const url = `${PROXY_URL}${encodeURIComponent(target)}`;
+        // 通过 jsdelivr 获取题目数据（完美支持跨域）
+        const url = `${CDN_BASE}/content/problems.json`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error('题目数据不存在，请等待 GitHub Actions 运行');
-        const data = await res.json();
-        const jsonStr = atob(data.content.replace(/\n/g, ''));
-        const jsonData = JSON.parse(jsonStr);
+        if (!res.ok) throw new Error('题目数据不存在');
+        const jsonData = await res.json();
         const problems = jsonData.problems || [];
         if (problems.length === 0) { container.innerHTML = '<p>⏳ 今日题目加载中...</p>'; return; }
         let html = '';
