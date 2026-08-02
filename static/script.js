@@ -1,10 +1,9 @@
 const GITHUB_OWNER = 'MrMagnets';
 const GITHUB_REPO = 'magnet-blog';
-const GITHUB_BRANCH = 'main';
 const POSTS_PATH = 'content/posts';
 
-// GitHub API 代理地址（如果失效可更换）
-const GH_PROXY = 'https://gh.api.99988866.xyz/https://api.github.com';
+// 使用 jsdelivr CDN 作为 API 代理，完美支持跨域
+const GH_CDN = `https://cdn.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}`;
 
 function getUrlParam(name) {
     const params = new URLSearchParams(window.location.search);
@@ -15,7 +14,8 @@ async function loadPostList() {
     const container = document.getElementById('post-list');
     if (!container) return;
     try {
-        const url = `${GH_PROXY}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}`;
+        // 通过 jsdelivr 获取 posts 目录下的文件列表
+        const url = `${GH_CDN}/content/posts/`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('无法获取文章列表');
         const files = await res.json();
@@ -23,12 +23,15 @@ async function loadPostList() {
             container.innerHTML = '<p>📭 还没有文章，去写一篇吧！</p>';
             return;
         }
+        // 过滤出 .md 文件并按文件名排序
         const posts = files.filter(f => f.name.endsWith('.md')).sort((a, b) => b.name.localeCompare(a.name));
         let html = '';
         for (const file of posts) {
             const slug = file.name.replace('.md', '');
+            // 直接获取 .md 文件内容
+            const contentUrl = `${GH_CDN}/content/posts/${file.name}`;
             try {
-                const contentRes = await fetch(file.download_url);
+                const contentRes = await fetch(contentUrl);
                 const content = await contentRes.text();
                 const titleMatch = content.match(/^#\s+(.+)/m);
                 const title = titleMatch ? titleMatch[1] : slug;
@@ -50,12 +53,16 @@ async function loadPostDetail() {
     const slug = getUrlParam('slug');
     if (!slug) { container.innerHTML = '<p>❌ 未指定文章</p>'; return; }
     try {
-        const url = `${GH_PROXY}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}/${slug}.md`;
+        const url = `${GH_CDN}/content/posts/${slug}.md`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('文章不存在');
-        const data = await res.json();
-        const content = atob(data.content.replace(/\n/g, ''));
-        let html = content.replace(/^# (.+)$/gm, '<h1>$1</h1>').replace(/^## (.+)$/gm, '<h2>$1</h2>').replace(/^### (.+)$/gm, '<h3>$1</h3>').replace(/\n/g, '<br>');
+        const content = await res.text();
+        // 简单的 Markdown 转 HTML
+        let html = content
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/\n/g, '<br>');
         container.innerHTML = html;
         document.title = `${slug} - 磁铁的博客`;
     } catch (error) {
@@ -67,18 +74,15 @@ async function loadProblems() {
     const container = document.getElementById('problem-list');
     if (!container) return;
     try {
-        const url = `${GH_PROXY}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/content/problems.json`;
+        const url = `${GH_CDN}/content/problems.json`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error('题目数据不存在，请等待 GitHub Actions 运行');
-        const data = await res.json();
-        const jsonStr = atob(data.content.replace(/\n/g, ''));
-        const jsonData = JSON.parse(jsonStr);
+        if (!res.ok) throw new Error('题目数据不存在');
+        const jsonData = await res.json();
         const problems = jsonData.problems || [];
         if (problems.length === 0) { container.innerHTML = '<p>⏳ 今日题目加载中...</p>'; return; }
         let html = '';
         for (const p of problems) {
             const desc = p.content ? p.content.slice(0, 200) + '...' : '暂无描述';
-            // 如果题目有错误信息，显示友好提示
             if (p.error) {
                 html += `<div class="problem-card"><h3><a href="${p.url || '#'}" target="_blank">${p.pid}</a></h3><span class="difficulty" style="background:#fed7d7;color:#9b2c2c;">⚠️ 加载失败</span><div class="problem-content">${p.error}</div></div>`;
             } else {
@@ -91,6 +95,7 @@ async function loadProblems() {
     }
 }
 
+// 发布文章的功能保持不变，依然使用 GitHub API
 async function publishPost(title, content, token) {
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10);
@@ -105,7 +110,7 @@ async function publishPost(title, content, token) {
         const checkRes = await fetch(url, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' } });
         if (checkRes.ok) { const existing = await checkRes.json(); sha = existing.sha; }
     } catch (e) {}
-    const payload = { message: `发布文章: ${title}`, content: base64Content, branch: GITHUB_BRANCH };
+    const payload = { message: `发布文章: ${title}`, content: base64Content, branch: 'main' };
     if (sha) payload.sha = sha;
     const response = await fetch(url, {
         method: 'PUT',
