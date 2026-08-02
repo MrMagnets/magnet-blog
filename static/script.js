@@ -1,10 +1,9 @@
 const GITHUB_OWNER = 'MrMagnets';
 const GITHUB_REPO = 'magnet-blog';
-const GITHUB_BRANCH = 'main';
 const POSTS_PATH = 'content/posts';
 
-// 使用 jsdelivr CDN（完美支持跨域）
-const CDN_BASE = `https://cdn.jsdelivr.net/gh/${GITHUB_OWNER}/${GITHUB_REPO}`;
+// 使用 Netlify Functions 作为代理（完美解决 CORS）
+const API_BASE = '/.netlify/functions';
 
 function getUrlParam(name) {
     const params = new URLSearchParams(window.location.search);
@@ -15,9 +14,7 @@ async function loadPostList() {
     const container = document.getElementById('post-list');
     if (!container) return;
     try {
-        // 使用 GitHub API 获取文章列表（带代理）
-        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${POSTS_PATH}`;
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}/get-posts`);
         if (!res.ok) throw new Error('无法获取文章列表');
         const files = await res.json();
         if (!Array.isArray(files) || files.length === 0) {
@@ -29,10 +26,9 @@ async function loadPostList() {
         for (const file of posts) {
             const slug = file.name.replace('.md', '');
             try {
-                // 通过 jsdelivr 获取文章内容
-                const contentUrl = `${CDN_BASE}/content/posts/${file.name}`;
-                const contentRes = await fetch(contentUrl);
-                const content = await contentRes.text();
+                const contentRes = await fetch(`${API_BASE}/get-post?slug=${encodeURIComponent(slug)}`);
+                const data = await contentRes.json();
+                const content = data.content || '';
                 const titleMatch = content.match(/^#\s+(.+)/m);
                 const title = titleMatch ? titleMatch[1] : slug;
                 const date = file.name.slice(0, 10) || '未知日期';
@@ -53,10 +49,10 @@ async function loadPostDetail() {
     const slug = getUrlParam('slug');
     if (!slug) { container.innerHTML = '<p>❌ 未指定文章</p>'; return; }
     try {
-        const url = `${CDN_BASE}/content/posts/${slug}.md`;
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}/get-post?slug=${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error('文章不存在');
-        const content = await res.text();
+        const data = await res.json();
+        const content = data.content || '';
         let html = content.replace(/^# (.+)$/gm, '<h1>$1</h1>').replace(/^## (.+)$/gm, '<h2>$1</h2>').replace(/^### (.+)$/gm, '<h3>$1</h3>').replace(/\n/g, '<br>');
         container.innerHTML = html;
         document.title = `${slug} - 磁铁的博客`;
@@ -69,10 +65,10 @@ async function loadProblems() {
     const container = document.getElementById('problem-list');
     if (!container) return;
     try {
-        const url = `${CDN_BASE}/content/problems.json`;
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}/get-problems`);
         if (!res.ok) throw new Error('题目数据不存在');
-        const jsonData = await res.json();
+        const data = await res.json();
+        const jsonData = data.json || { problems: [] };
         const problems = jsonData.problems || [];
         if (problems.length === 0) { container.innerHTML = '<p>⏳ 今日题目加载中...</p>'; return; }
         let html = '';
@@ -104,7 +100,7 @@ async function publishPost(title, content, token) {
         const checkRes = await fetch(url, { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' } });
         if (checkRes.ok) { const existing = await checkRes.json(); sha = existing.sha; }
     } catch (e) {}
-    const payload = { message: `发布文章: ${title}`, content: base64Content, branch: GITHUB_BRANCH };
+    const payload = { message: `发布文章: ${title}`, content: base64Content, branch: 'main' };
     if (sha) payload.sha = sha;
     const response = await fetch(url, {
         method: 'PUT',
