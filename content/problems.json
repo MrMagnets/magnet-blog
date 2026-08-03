@@ -1,17 +1,38 @@
 {
-  "date": "2026-08-02T11:04:36.432303",
+  "date": "2026-08-03T13:22:58.840532",
   "problems": [
     {
-      "pid": "P1055",
-      "error": "HTTP 403"
+      "pid": "P1089",
+      "title": "P1089",
+      "url": "https://www.luogu.com.cn/problem/P1089",
+      "difficulty": "未知",
+      "tags": [],
+      "content": "题目 P1089，请访问洛谷查看完整内容",
+      "input_format": "",
+      "output_format": "",
+      "samples": []
     },
     {
-      "pid": "P1003",
-      "error": "HTTP 403"
+      "pid": "P1072",
+      "title": "P1072",
+      "url": "https://www.luogu.com.cn/problem/P1072",
+      "difficulty": "未知",
+      "tags": [],
+      "content": "题目 P1072，请访问洛谷查看完整内容",
+      "input_format": "",
+      "output_format": "",
+      "samples": []
     },
     {
-      "pid": "P1041",
-      "error": "HTTP 403"
+      "pid": "P1076",
+      "title": "P1076",
+      "url": "https://www.luogu.com.cn/problem/P1076",
+      "difficulty": "未知",
+      "tags": [],
+      "content": "题目 P1076，请访问洛谷查看完整内容",
+      "input_format": "",
+      "output_format": "",
+      "samples": []
     }
   ]
 }
