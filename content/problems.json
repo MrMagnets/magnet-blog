@@ -1,35 +1,35 @@
 {
-  "date": "2026-08-04T11:10:49.834747",
+  "date": "2026-08-05T11:05:32.874616",
   "problems": [
     {
-      "pid": "P1047",
-      "title": "P1047",
-      "url": "https://www.luogu.com.cn/problem/P1047",
+      "pid": "P1086",
+      "title": "P1086",
+      "url": "https://www.luogu.com.cn/problem/P1086",
       "difficulty": "未知",
       "tags": [],
-      "content": "题目 P1047，请访问洛谷查看完整内容",
+      "content": "题目 P1086，请访问洛谷查看完整内容",
       "input_format": "",
       "output_format": "",
       "samples": []
     },
     {
-      "pid": "P1045",
-      "title": "P1045",
-      "url": "https://www.luogu.com.cn/problem/P1045",
+      "pid": "P1022",
+      "title": "P1022",
+      "url": "https://www.luogu.com.cn/problem/P1022",
       "difficulty": "未知",
       "tags": [],
-      "content": "题目 P1045，请访问洛谷查看完整内容",
+      "content": "题目 P1022，请访问洛谷查看完整内容",
       "input_format": "",
       "output_format": "",
       "samples": []
     },
     {
-      "pid": "P1093",
-      "title": "P1093",
-      "url": "https://www.luogu.com.cn/problem/P1093",
+      "pid": "P1083",
+      "title": "P1083",
+      "url": "https://www.luogu.com.cn/problem/P1083",
       "difficulty": "未知",
       "tags": [],
-      "content": "题目 P1093，请访问洛谷查看完整内容",
+      "content": "题目 P1083，请访问洛谷查看完整内容",
       "input_format": "",
       "output_format": "",
       "samples": []
